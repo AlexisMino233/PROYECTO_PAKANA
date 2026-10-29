@@ -4,6 +4,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import Nosotros from './pages/Nosotros';
 import Catalogo from './pages/Catalogo';
+import './index.css';
 
 function App() {
   return (

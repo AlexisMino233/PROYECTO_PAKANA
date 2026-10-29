@@ -1,11 +1,10 @@
-// src/pages/Home.jsx
 import { useState } from 'react';
 
 const imagenes = [
-  { src: '/assets/img/Pakana_carrusel.jpeg', alt: 'Pakana paisaje' },
-  { src: '/assets/img/Curcuma_carrusel.jpeg', alt: 'Curcuma raiz' },
-  { src: '/assets/img/Condimentos_carrusel.jpeg', alt: 'Varios condimentos' },
-  { src: '/assets/img/Hojas_carrusel.jpeg', alt: 'Hojas curcuma' },
+  { src: '/assets/Pakana_carrusel.jpeg', alt: 'Pakana paisaje' },
+  { src: '/assets/Curcuma_carrusel.jpeg', alt: 'Curcuma raiz' },
+  { src: '/assets/Condimentos_carrusel.jpeg', alt: 'Varios condimentos' },
+  { src: '/assets/Hojas_carrusel.jpeg', alt: 'Hojas curcuma' },
 ];
 
 function Home() {
