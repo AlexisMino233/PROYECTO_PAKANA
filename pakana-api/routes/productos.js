@@ -1,9 +1,10 @@
 import express from 'express';
 import Producto from '../models/Producto.js';
+import { proteger } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Listar todos
+// Público
 router.get('/', async (req, res) => {
   try {
     const productos = await Producto.find().sort({ createdAt: -1 });
@@ -13,7 +14,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Obtener uno
 router.get('/:id', async (req, res) => {
   try {
     const producto = await Producto.findById(req.params.id);
@@ -24,8 +24,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Crear
-router.post('/', async (req, res) => {
+// Protegidas (solo admin)
+router.post('/', proteger, async (req, res) => {
   try {
     const producto = await Producto.create(req.body);
     res.status(201).json(producto);
@@ -34,8 +34,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Actualizar
-router.put('/:id', async (req, res) => {
+router.put('/:id', proteger, async (req, res) => {
   try {
     const producto = await Producto.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -47,8 +46,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Eliminar
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', proteger, async (req, res) => {
   try {
     const producto = await Producto.findByIdAndDelete(req.params.id);
     if (!producto) return res.status(404).json({ message: 'No encontrado' });
