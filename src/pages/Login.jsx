@@ -31,7 +31,7 @@ function Login() {
   };
 
   return (
-    <main style={{ maxWidth: 400, margin: '3rem auto', padding: '1rem' }}>
+    <main className="login">
       <h1>Admin Pakána</h1>
       <form onSubmit={handleSubmit}>
         <div>

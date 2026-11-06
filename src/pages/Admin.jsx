@@ -130,7 +130,7 @@ function Admin() {
   const mensajesNuevos = mensajes.filter((m) => !m.leido).length;
 
   return (
-    <main>
+    <main className="admin">
       <div>
         <h1>Panel Admin</h1>
         <button type="button" onClick={cerrarSesion}>
@@ -139,11 +139,11 @@ function Admin() {
       </div>
 
       <div>
-        <button type="button" onClick={() => setTab('productos')}>
-          Productos
+        <button type="button" className={tab === 'productos' ? 'activo' : ''} onClick={() => setTab('productos')}>
+        Productos
         </button>
-        <button type="button" onClick={() => setTab('mensajes')}>
-          Mensajes ({mensajesNuevos})
+        <button type="button" className={tab === 'mensajes' ? 'activo' : ''} onClick={() => setTab('mensajes')}>
+        Mensajes ({mensajesNuevos})
         </button>
       </div>
 
