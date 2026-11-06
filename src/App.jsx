@@ -8,6 +8,7 @@ import './index.css';
 import Login from './pages/Login';
 import Admin from './pages/Admin';
 import RutaProtegida from './components/RutaProtegida';
+import Contacto from './pages/Contacto';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         {<Route path="/catalogo" element={<Catalogo />} />}
         {<Route path="/login" element={<Login />} />}
         {<Route path="/admin" element={<RutaProtegida><Admin /></RutaProtegida>} />}
+        {<Route path="/contacto" element={<Contacto />} />}
       </Routes>
 
       <Footer />
