@@ -13,9 +13,13 @@ function Admin() {
   const [form, setForm] = useState({
     nombre: '',
     descripcion: '',
-    precio: '',
     imagen: '',
     categoria: 'condimento',
+    g100: '',
+    lb1: '',
+    kg1: '',
+    lb25: '',
+    qq1: '',
   });
   const [editId, setEditId] = useState(null);
   const [error, setError] = useState('');
@@ -23,6 +27,18 @@ function Admin() {
   const headers = {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${token}`,
+  };
+
+  const formVacio = {
+    nombre: '',
+    descripcion: '',
+    imagen: '',
+    categoria: 'condimento',
+    g100: '',
+    lb1: '',
+    kg1: '',
+    lb25: '',
+    qq1: '',
   };
 
   const cargar = async () => {
@@ -52,8 +68,17 @@ function Admin() {
     setError('');
 
     const body = {
-      ...form,
-      precio: Number(form.precio),
+      nombre: form.nombre,
+      descripcion: form.descripcion,
+      imagen: form.imagen,
+      categoria: form.categoria,
+      precios: {
+        g100: form.g100 === '' ? null : Number(form.g100),
+        lb1: Number(form.lb1),
+        kg1: form.kg1 === '' ? null : Number(form.kg1),
+        lb25: form.lb25 === '' ? null : Number(form.lb25),
+        qq1: Number(form.qq1),
+      },
     };
 
     try {
@@ -71,13 +96,7 @@ function Admin() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Error al guardar');
 
-      setForm({
-        nombre: '',
-        descripcion: '',
-        precio: '',
-        imagen: '',
-        categoria: 'condimento',
-      });
+      setForm(formVacio);
       setEditId(null);
       cargar();
     } catch (err) {
@@ -90,9 +109,13 @@ function Admin() {
     setForm({
       nombre: p.nombre,
       descripcion: p.descripcion || '',
-      precio: p.precio,
       imagen: p.imagen || '',
       categoria: p.categoria || 'condimento',
+      g100: p.precios?.g100 ?? '',
+      lb1: p.precios?.lb1 ?? '',
+      kg1: p.precios?.kg1 ?? '',
+      lb25: p.precios?.lb25 ?? '',
+      qq1: p.precios?.qq1 ?? '',
     });
   };
 
@@ -130,7 +153,7 @@ function Admin() {
   const mensajesNuevos = mensajes.filter((m) => !m.leido).length;
 
   return (
-    <main className="admin">
+    <main>
       <div>
         <h1>Panel Admin</h1>
         <button type="button" onClick={cerrarSesion}>
@@ -139,11 +162,11 @@ function Admin() {
       </div>
 
       <div>
-        <button type="button" className={tab === 'productos' ? 'activo' : ''} onClick={() => setTab('productos')}>
-        Productos
+        <button type="button" onClick={() => setTab('productos')}>
+          Productos
         </button>
-        <button type="button" className={tab === 'mensajes' ? 'activo' : ''} onClick={() => setTab('mensajes')}>
-        Mensajes ({mensajesNuevos})
+        <button type="button" onClick={() => setTab('mensajes')}>
+          Mensajes ({mensajesNuevos})
         </button>
       </div>
 
@@ -165,15 +188,6 @@ function Admin() {
               onChange={handleChange}
             />
             <input
-              name="precio"
-              type="number"
-              step="0.01"
-              placeholder="Precio"
-              value={form.precio}
-              onChange={handleChange}
-              required
-            />
-            <input
               name="imagen"
               placeholder="URL imagen (GitHub raw)"
               value={form.imagen}
@@ -185,10 +199,55 @@ function Admin() {
               value={form.categoria}
               onChange={handleChange}
             />
+
+            <p>Precios</p>
+            <input
+              name="g100"
+              type="number"
+              step="0.01"
+              placeholder="100 g (opcional)"
+              value={form.g100}
+              onChange={handleChange}
+            />
+            <input
+              name="lb1"
+              type="number"
+              step="0.01"
+              placeholder="1 lb *"
+              value={form.lb1}
+              onChange={handleChange}
+              required
+            />
+            <input
+              name="kg1"
+              type="number"
+              step="0.01"
+              placeholder="1 kg (opcional)"
+              value={form.kg1}
+              onChange={handleChange}
+            />
+            <input
+              name="lb25"
+              type="number"
+              step="0.01"
+              placeholder="25 lb (opcional)"
+              value={form.lb25}
+              onChange={handleChange}
+            />
+            <input
+              name="qq1"
+              type="number"
+              step="0.01"
+              placeholder="1 qq / 100 lb *"
+              value={form.qq1}
+              onChange={handleChange}
+              required
+            />
+
             {error && <p>{error}</p>}
             <button type="submit">{editId ? 'Actualizar' : 'Crear'}</button>
             {editId && (
-              <button type="button" onClick={() => setEditId(null)}>
+              <button type="button" onClick={() => { setEditId(null); setForm(formVacio); }}>
                 Cancelar
               </button>
             )}
@@ -199,7 +258,9 @@ function Admin() {
             {productos.map((p) => (
               <li key={p._id}>
                 {p.imagen && <img src={p.imagen} alt={p.nombre} width="80" />}
-                <strong>{p.nombre}</strong> — ${p.precio}
+                <strong>{p.nombre}</strong>
+                {' — '}
+                1 lb: ${p.precios?.lb1 ?? '-'} | 1 qq: ${p.precios?.qq1 ?? '-'}
                 <div>
                   <button type="button" onClick={() => editar(p)}>
                     Editar
