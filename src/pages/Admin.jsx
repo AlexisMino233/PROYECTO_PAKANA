@@ -15,6 +15,7 @@ function Admin() {
     descripcion: '',
     imagen: '',
     categoria: 'condimento',
+    destacado: false,
     g100: '',
     lb1: '',
     kg1: '',
@@ -34,6 +35,7 @@ function Admin() {
     descripcion: '',
     imagen: '',
     categoria: 'condimento',
+    destacado: false,
     g100: '',
     lb1: '',
     kg1: '',
@@ -72,6 +74,7 @@ function Admin() {
       descripcion: form.descripcion,
       imagen: form.imagen,
       categoria: form.categoria,
+      destacado: form.destacado,
       precios: {
         g100: form.g100 === '' ? null : Number(form.g100),
         lb1: Number(form.lb1),
@@ -111,6 +114,7 @@ function Admin() {
       descripcion: p.descripcion || '',
       imagen: p.imagen || '',
       categoria: p.categoria || 'condimento',
+      destacado: p.destacado || false,
       g100: p.precios?.g100 ?? '',
       lb1: p.precios?.lb1 ?? '',
       kg1: p.precios?.kg1 ?? '',
@@ -199,6 +203,15 @@ function Admin() {
               value={form.categoria}
               onChange={handleChange}
             />
+            <label>
+              <input
+                type="checkbox"
+                name="destacado"
+                checked={form.destacado}
+                onChange={(e) => setForm({ ...form, destacado: e.target.checked })}
+              />
+              Producto destacado
+            </label>
 
             <p>Precios</p>
             <input
@@ -259,6 +272,7 @@ function Admin() {
               <li key={p._id}>
                 {p.imagen && <img src={p.imagen} alt={p.nombre} width="80" />}
                 <strong>{p.nombre}</strong>
+                {p.destacado && <span> ★ Destacado</span>}
                 {' — '}
                 1 lb: ${p.precios?.lb1 ?? '-'} | 1 qq: ${p.precios?.qq1 ?? '-'}
                 <div>

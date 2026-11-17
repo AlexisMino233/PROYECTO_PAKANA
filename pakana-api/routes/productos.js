@@ -56,4 +56,16 @@ router.delete('/:id', proteger, async (req, res) => {
   }
 });
 
+router.get('/', async (req, res) => {
+  try {
+    const productos = await Producto.find().sort({
+      destacado: -1,   // true primero
+      createdAt: -1,
+    });
+    res.json(productos);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;

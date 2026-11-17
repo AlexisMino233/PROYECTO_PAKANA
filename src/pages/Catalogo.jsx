@@ -36,9 +36,11 @@ function Catalogo() {
     );
   });
 
+  const destacados = filtrados.filter((p) => p.destacado);
+  const resto = filtrados.filter((p) => !p.destacado);
+
   const descargarPDF = () => {
     const doc = new jsPDF();
-
     doc.setFontSize(18);
     doc.text('Catálogo Pakána', 14, 20);
 
@@ -61,6 +63,21 @@ function Catalogo() {
 
     doc.save('catalogo-pakana.pdf');
   };
+
+  const renderProducto = (p) => (
+    <article key={p._id} className="producto-card">
+      {p.imagen && <img src={p.imagen} alt={p.nombre} />}
+      <h3>{p.nombre}</h3>
+      {p.descripcion && <p>{p.descripcion}</p>}
+      <ul className="precios">
+        {p.precios?.g100 != null && <li>100 g: ${p.precios.g100}</li>}
+        {p.precios?.lb1 != null && <li>1 lb: ${p.precios.lb1}</li>}
+        {p.precios?.kg1 != null && <li>1 kg: ${p.precios.kg1}</li>}
+        {p.precios?.lb25 != null && <li>25 lb: ${p.precios.lb25}</li>}
+        {p.precios?.qq1 != null && <li>1 qq (100 lb): ${p.precios.qq1}</li>}
+      </ul>
+    </article>
+  );
 
   if (cargando) return <p>Cargando catálogo...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -87,26 +104,23 @@ function Catalogo() {
         </button>
       </div>
 
+      {destacados.length > 0 && (
+        <section className="catalogo-destacados">
+          <h2>Productos destacados</h2>
+          <div className="catalogo-lista">
+            {destacados.map(renderProducto)}
+          </div>
+        </section>
+      )}
+
       <section className="catalogo-lista">
+        <h2>Todos los productos</h2>
         {filtrados.length === 0 ? (
           <p>No se encontraron productos.</p>
+        ) : resto.length === 0 && destacados.length > 0 ? (
+          <p>No hay más productos fuera de destacados.</p>
         ) : (
-          filtrados.map((p) => (
-            <article key={p._id} className="producto-card">
-              {p.imagen && <img src={p.imagen} alt={p.nombre} />}
-              <h3>{p.nombre}</h3>
-              {p.descripcion && <p>{p.descripcion}</p>}
-              <ul className="precios">
-                {p.precios?.g100 != null && <li>100 g: ${p.precios.g100}</li>}
-                {p.precios?.lb1 != null && <li>1 lb: ${p.precios.lb1}</li>}
-                {p.precios?.kg1 != null && <li>1 kg: ${p.precios.kg1}</li>}
-                {p.precios?.lb25 != null && <li>25 lb: ${p.precios.lb25}</li>}
-                {p.precios?.qq1 != null && (
-                  <li>1 qq (100 lb): ${p.precios.qq1}</li>
-                )}
-              </ul>
-            </article>
-          ))
+          resto.map(renderProducto)
         )}
       </section>
     </main>

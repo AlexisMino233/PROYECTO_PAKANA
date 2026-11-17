@@ -6,6 +6,7 @@ const productoSchema = new mongoose.Schema(
     descripcion: { type: String, default: '' },
     imagen: { type: String, default: '' },
     categoria: { type: String, default: 'condimento' },
+    destacado: { type: Boolean, default: false },
     precios: {
       g100: { type: Number, default: null },
       lb1: { type: Number, required: true },
