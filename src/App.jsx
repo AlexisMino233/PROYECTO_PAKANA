@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Admin from './pages/Admin';
 import RutaProtegida from './components/RutaProtegida';
 import Contacto from './pages/Contacto';
+import ChatBot from './components/ChatBot';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
       </Routes>
 
       <Footer />
+      <ChatBot />
     </BrowserRouter>
   );
 }

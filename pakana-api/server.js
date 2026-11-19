@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import productosRoutes from './routes/productos.js';
 import authRoutes from './routes/auth.js';
 import mensajesRoutes from './routes/mensajes.js';
+import chatRoutes from './routes/chat.js';
 
 dotenv.config();
 
@@ -13,6 +14,8 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/api/chat', chatRoutes);
 
 app.use('/api/mensajes', mensajesRoutes);
 
