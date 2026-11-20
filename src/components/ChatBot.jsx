@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import logo from '../assets/logo_pakana.jpg'; 
 
 const API = 'http://localhost:5000';
+const MAX_CARACTERES = 500; // igual que en el backend (pakana-api/routes/chat.js)
 
 function ChatBot() {
   const [abierto, setAbierto] = useState(false);
@@ -97,6 +98,7 @@ function ChatBot() {
                 className={
                   m.role === 'user' ? 'chatbot-msg user' : 'chatbot-msg bot'
                 }
+                style={{ whiteSpace: 'pre-line' }} // respeta los saltos de línea de la respuesta
               >
                 {m.content}
               </div>
@@ -109,8 +111,12 @@ function ChatBot() {
               type="text"
               placeholder="Ej: receta con cúrcuma..."
               value={input}
+              maxLength={MAX_CARACTERES}
               onChange={(e) => setInput(e.target.value)}
             />
+            <small aria-live="polite">
+              {input.length}/{MAX_CARACTERES}
+            </small>
             <button type="submit" disabled={cargando}>
               Enviar
             </button>
