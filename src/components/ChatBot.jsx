@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import logo from '../assets/logo_pakana.jpg'; 
 
-const API = 'http://localhost:5000';
+import { API } from '../config';
 const MAX_CARACTERES = 500; // igual que en el backend (pakana-api/routes/chat.js)
 
 function ChatBot() {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-const API = 'http://localhost:5000';
+import { API } from '../config';
 
 // Hook reutilizable: carga los productos desde la API (MongoDB).
 // Devuelve { productos, cargando, error, recargar }.

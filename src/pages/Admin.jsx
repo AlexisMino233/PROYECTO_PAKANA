@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useProductos } from '../hooks/useProductos';
 import ProductoCard from '../components/catalogo/ProductoCard';
 
-const API = 'http://localhost:5000';
+import { API } from '../config';
 const TAMANO_MAXIMO = 2 * 1024 * 1024; // 2 MB (igual que en el backend)
 const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
 
