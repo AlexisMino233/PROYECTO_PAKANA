@@ -1,86 +1,33 @@
-import { useEffect, useState } from 'react';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
-
-const API = 'http://localhost:5000';
+import { useState } from 'react';
+import { useProductos } from '../hooks/useProductos';
+import { generarCatalogoPDF } from '../utils/catalogoPDF';
+import BuscadorCatalogo from '../components/catalogo/BuscadorCatalogo';
+import SeccionProductos from '../components/catalogo/SeccionProductos';
 
 function Catalogo() {
-  const [productos, setProductos] = useState([]);
+  const { productos, cargando, error } = useProductos();
   const [busqueda, setBusqueda] = useState('');
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetch(`${API}/api/productos`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Error al cargar productos');
-        return res.json();
-      })
-      .then((data) => {
-        setProductos(data);
-        setCargando(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setCargando(false);
-      });
-  }, []);
-
-  const filtrados = productos.filter((p) => {
-    const q = busqueda.toLowerCase().trim();
-    if (!q) return true;
-    return (
-      p.nombre?.toLowerCase().includes(q) ||
-      p.descripcion?.toLowerCase().includes(q) ||
-      p.categoria?.toLowerCase().includes(q)
-    );
-  });
+  const q = busqueda.toLowerCase().trim();
+  const filtrados = q
+    ? productos.filter(
+        (p) =>
+          p.nombre?.toLowerCase().includes(q) ||
+          p.descripcion?.toLowerCase().includes(q) ||
+          p.categoria?.toLowerCase().includes(q)
+      )
+    : productos;
 
   const destacados = filtrados.filter((p) => p.destacado);
   const resto = filtrados.filter((p) => !p.destacado);
 
-  const descargarPDF = () => {
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Catálogo Pakána', 14, 20);
+  const mensajeVacio =
+    filtrados.length === 0
+      ? 'No se encontraron productos.'
+      : 'No hay más productos fuera de destacados.';
 
-    const filas = filtrados.map((p) => [
-      p.nombre || '',
-      p.precios?.g100 != null ? `$${p.precios.g100}` : '-',
-      p.precios?.lb1 != null ? `$${p.precios.lb1}` : '-',
-      p.precios?.kg1 != null ? `$${p.precios.kg1}` : '-',
-      p.precios?.lb25 != null ? `$${p.precios.lb25}` : '-',
-      p.precios?.qq1 != null ? `$${p.precios.qq1}` : '-',
-    ]);
-
-    autoTable(doc, {
-      startY: 28,
-      head: [['Producto', '100 g', '1 lb', '1 kg', '25 lb', '1 qq']],
-      body: filas,
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [40, 40, 40] },
-    });
-
-    doc.save('catalogo-pakana.pdf');
-  };
-
-  const renderProducto = (p) => (
-    <article key={p._id} className="producto-card">
-      {p.imagen && <img src={p.imagen} alt={p.nombre} />}
-      <h3>{p.nombre}</h3>
-      {p.descripcion && <p>{p.descripcion}</p>}
-      <ul className="precios">
-        {p.precios?.g100 != null && <li>100 g: ${p.precios.g100}</li>}
-        {p.precios?.lb1 != null && <li>1 lb: ${p.precios.lb1}</li>}
-        {p.precios?.kg1 != null && <li>1 kg: ${p.precios.kg1}</li>}
-        {p.precios?.lb25 != null && <li>25 lb: ${p.precios.lb25}</li>}
-        {p.precios?.qq1 != null && <li>1 qq (100 lb): ${p.precios.qq1}</li>}
-      </ul>
-    </article>
-  );
-
-  if (cargando) return <p>Cargando catálogo...</p>;
-  if (error) return <p>Error: {error}</p>;
+  if (cargando) return <main><p className="estado">Cargando catálogo...</p></main>;
+  if (error) return <main><p className="estado">Error: {error}</p></main>;
 
   return (
     <main>
@@ -92,37 +39,23 @@ function Catalogo() {
         </p>
       </section>
 
-      <div className="catalogo-buscador">
-        <input
-          type="search"
-          placeholder="Buscar producto..."
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-        />
-        <button type="button" onClick={descargarPDF}>
-          Descargar PDF
-        </button>
-      </div>
+      <BuscadorCatalogo
+        valor={busqueda}
+        onCambiar={setBusqueda}
+        onDescargarPDF={() => generarCatalogoPDF(filtrados)}
+      />
 
-      {destacados.length > 0 && (
-        <section className="catalogo-destacados">
-          <h2>Productos destacados</h2>
-          <div className="catalogo-lista">
-            {destacados.map(renderProducto)}
-          </div>
-        </section>
-      )}
+      <SeccionProductos
+        titulo="Productos destacados"
+        productos={destacados}
+        className="catalogo-destacados"
+      />
 
-      <section className="catalogo-lista">
-        <h2>Todos los productos</h2>
-        {filtrados.length === 0 ? (
-          <p>No se encontraron productos.</p>
-        ) : resto.length === 0 && destacados.length > 0 ? (
-          <p>No hay más productos fuera de destacados.</p>
-        ) : (
-          resto.map(renderProducto)
-        )}
-      </section>
+      <SeccionProductos
+        titulo="Todos los productos"
+        productos={resto}
+        mensajeVacio={mensajeVacio}
+      />
     </main>
   );
 }

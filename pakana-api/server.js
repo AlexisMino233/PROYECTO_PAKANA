@@ -6,6 +6,7 @@ import productosRoutes from './routes/productos.js';
 import authRoutes from './routes/auth.js';
 import mensajesRoutes from './routes/mensajes.js';
 import chatRoutes from './routes/chat.js';
+import imagenesRoutes from './routes/imagenes.js';
 
 dotenv.config();
 
@@ -18,6 +19,8 @@ app.use(express.json());
 app.use('/api/chat', chatRoutes);
 
 app.use('/api/mensajes', mensajesRoutes);
+
+app.use('/api/imagenes', imagenesRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/productos', productosRoutes);

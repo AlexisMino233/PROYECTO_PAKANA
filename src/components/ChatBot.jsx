@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import logo from '../assets/logo_pakana.jpg'; // ajusta la ruta si es otra
+import logo from '../assets/logo_pakana.jpg'; 
 
 const API = 'http://localhost:5000';
 

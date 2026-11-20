@@ -1,19 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useProductos } from '../hooks/useProductos';
+import ProductoCard from '../components/catalogo/ProductoCard';
 
 const API = 'http://localhost:5000';
+const TAMANO_MAXIMO = 2 * 1024 * 1024; // 2 MB (igual que en el backend)
+const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
 
 function Admin() {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
   const [tab, setTab] = useState('productos');
-  const [productos, setProductos] = useState([]);
+  const { productos, cargando, error: errorProductos, recargar: cargar } = useProductos();
   const [mensajes, setMensajes] = useState([]);
   const [form, setForm] = useState({
     nombre: '',
     descripcion: '',
     imagen: '',
+    imagenRuta: '',
     categoria: 'condimento',
     destacado: false,
     g100: '',
@@ -24,6 +29,10 @@ function Admin() {
   });
   const [editId, setEditId] = useState(null);
   const [error, setError] = useState('');
+  const [archivo, setArchivo] = useState(null); // imagen elegida, aún sin subir
+  const [preview, setPreview] = useState(''); // vista previa local de esa imagen
+  const [guardando, setGuardando] = useState('');
+  const inputArchivoRef = useRef(null);
 
   const headers = {
     'Content-Type': 'application/json',
@@ -34,6 +43,7 @@ function Admin() {
     nombre: '',
     descripcion: '',
     imagen: '',
+    imagenRuta: '',
     categoria: 'condimento',
     destacado: false,
     g100: '',
@@ -43,12 +53,6 @@ function Admin() {
     qq1: '',
   };
 
-  const cargar = async () => {
-    const res = await fetch(`${API}/api/productos`);
-    const data = await res.json();
-    setProductos(data);
-  };
-
   const cargarMensajes = async () => {
     const res = await fetch(`${API}/api/mensajes`, { headers });
     if (!res.ok) return;
@@ -56,23 +60,103 @@ function Admin() {
     setMensajes(data);
   };
 
+  // Los productos los carga useProductos; aquí solo los mensajes
   useEffect(() => {
-    cargar();
     cargarMensajes();
   }, []);
 
+  // Libera la vista previa anterior para no acumular memoria
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const limpiarArchivo = () => {
+    setArchivo(null);
+    setPreview('');
+    if (inputArchivoRef.current) inputArchivoRef.current.value = '';
+  };
+
+  const limpiarFormulario = () => {
+    setForm(formVacio);
+    setEditId(null);
+    limpiarArchivo();
+  };
+
+  // El admin eligió una imagen desde su computadora
+  const handleArchivo = (e) => {
+    setError('');
+    const elegido = e.target.files?.[0];
+    if (!elegido) return limpiarArchivo();
+
+    if (!TIPOS_PERMITIDOS.includes(elegido.type)) {
+      setError('Solo se permiten imágenes JPG, PNG o WEBP');
+      return limpiarArchivo();
+    }
+    if (elegido.size > TAMANO_MAXIMO) {
+      setError('La imagen supera el máximo de 2 MB');
+      return limpiarArchivo();
+    }
+
+    setArchivo(elegido);
+    setPreview(URL.createObjectURL(elegido));
+  };
+
+  // El admin pegó una URL a mano: ya no es una imagen subida por el sistema
+  const handleUrlImagen = (e) => {
+    limpiarArchivo();
+    setForm({ ...form, imagen: e.target.value, imagenRuta: '' });
+  };
+
+  // Sube la imagen a GitHub (a través de la API) y devuelve { url, ruta }
+  const subirImagen = async () => {
+    const datos = new FormData();
+    datos.append('nombre', form.nombre); // primero el texto, luego el archivo
+    datos.append('imagen', archivo);
+
+    const res = await fetch(`${API}/api/imagenes`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }, // sin Content-Type: el navegador lo pone
+      body: datos,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Error al subir la imagen');
+    return data;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
+    let imagen = form.imagen;
+    let imagenRuta = form.imagenRuta;
+    let subida = null;
+
+    try {
+      if (archivo) {
+        setGuardando('Subiendo imagen...');
+        subida = await subirImagen();
+        imagen = subida.url;
+        imagenRuta = subida.ruta;
+      }
+    } catch (err) {
+      setGuardando('');
+      setError(err.message);
+      return;
+    }
+
+    setGuardando('Guardando producto...');
+
     const body = {
       nombre: form.nombre,
       descripcion: form.descripcion,
-      imagen: form.imagen,
+      imagen,
+      imagenRuta,
       categoria: form.categoria,
       destacado: form.destacado,
       precios: {
@@ -99,20 +183,31 @@ function Admin() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Error al guardar');
 
-      setForm(formVacio);
-      setEditId(null);
+      limpiarFormulario();
       cargar();
     } catch (err) {
+      // La imagen se subió pero el producto no se guardó: se borra para no dejarla huérfana
+      if (subida) {
+        fetch(`${API}/api/imagenes`, {
+          method: 'DELETE',
+          headers,
+          body: JSON.stringify({ ruta: subida.ruta }),
+        }).catch(() => {});
+      }
       setError(err.message);
+    } finally {
+      setGuardando('');
     }
   };
 
   const editar = (p) => {
+    limpiarArchivo();
     setEditId(p._id);
     setForm({
       nombre: p.nombre,
       descripcion: p.descripcion || '',
       imagen: p.imagen || '',
+      imagenRuta: p.imagenRuta || '',
       categoria: p.categoria || 'condimento',
       destacado: p.destacado || false,
       g100: p.precios?.g100 ?? '',
@@ -157,7 +252,7 @@ function Admin() {
   const mensajesNuevos = mensajes.filter((m) => !m.leido).length;
 
   return (
-    <main>
+    <main className="admin">
       <div>
         <h1>Panel Admin</h1>
         <button type="button" onClick={cerrarSesion}>
@@ -191,11 +286,31 @@ function Admin() {
               value={form.descripcion}
               onChange={handleChange}
             />
+            <label>
+              Imagen (JPG, PNG o WEBP, máx. 2 MB)
+              <input
+                ref={inputArchivoRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleArchivo}
+              />
+            </label>
+            {(preview || form.imagen) && (
+              <div>
+                <img src={preview || form.imagen} alt="Vista previa" width="120" />
+                {archivo && (
+                  <button type="button" onClick={limpiarArchivo}>
+                    Quitar imagen elegida
+                  </button>
+                )}
+              </div>
+            )}
             <input
               name="imagen"
-              placeholder="URL imagen (GitHub raw)"
-              value={form.imagen}
-              onChange={handleChange}
+              placeholder="...o pega una URL de imagen (opcional)"
+              value={archivo ? '' : form.imagen}
+              onChange={handleUrlImagen}
+              disabled={!!archivo}
             />
             <input
               name="categoria"
@@ -258,34 +373,37 @@ function Admin() {
             />
 
             {error && <p>{error}</p>}
-            <button type="submit">{editId ? 'Actualizar' : 'Crear'}</button>
+            {guardando && <p>{guardando}</p>}
+            <button type="submit" disabled={!!guardando}>
+              {editId ? 'Actualizar' : 'Crear'}
+            </button>
             {editId && (
-              <button type="button" onClick={() => { setEditId(null); setForm(formVacio); }}>
+              <button type="button" onClick={limpiarFormulario}>
                 Cancelar
               </button>
             )}
           </form>
 
           <h2>Productos</h2>
-          <ul>
+          {cargando && <p>Cargando productos...</p>}
+          {errorProductos && <p>Error: {errorProductos}</p>}
+          {!cargando && !errorProductos && productos.length === 0 && (
+            <p>No hay productos todavía.</p>
+          )}
+          {/* Mismas tarjetas que el catálogo: el admin ve el producto como lo verá el cliente */}
+          <div className="catalogo-lista">
             {productos.map((p) => (
-              <li key={p._id}>
-                {p.imagen && <img src={p.imagen} alt={p.nombre} width="80" />}
-                <strong>{p.nombre}</strong>
-                {p.destacado && <span> ★ Destacado</span>}
-                {' — '}
-                1 lb: ${p.precios?.lb1 ?? '-'} | 1 qq: ${p.precios?.qq1 ?? '-'}
-                <div>
-                  <button type="button" onClick={() => editar(p)}>
-                    Editar
-                  </button>
-                  <button type="button" onClick={() => eliminar(p._id)}>
-                    Eliminar
-                  </button>
-                </div>
-              </li>
+              <ProductoCard key={p._id} producto={p}>
+                {p.destacado && <p>★ Destacado</p>}
+                <button type="button" onClick={() => editar(p)}>
+                  Editar
+                </button>
+                <button type="button" onClick={() => eliminar(p._id)}>
+                  Eliminar
+                </button>
+              </ProductoCard>
             ))}
-          </ul>
+          </div>
         </>
       )}
 
