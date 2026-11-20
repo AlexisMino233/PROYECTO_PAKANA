@@ -1,6 +1,7 @@
 import express from 'express';
 import Producto from '../models/Producto.js';
 import { proteger } from '../middleware/auth.js';
+import { eliminarImagenSilencioso } from '../utils/github.js';
 
 const router = express.Router();
 
@@ -36,10 +37,18 @@ router.post('/', proteger, async (req, res) => {
 
 router.put('/:id', proteger, async (req, res) => {
   try {
+    const anterior = await Producto.findById(req.params.id);
+    if (!anterior) return res.status(404).json({ message: 'No encontrado' });
+
     const producto = await Producto.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
-    if (!producto) return res.status(404).json({ message: 'No encontrado' });
+
+    // Si cambió la imagen, se borra la anterior de GitHub
+    if (anterior.imagenRuta && anterior.imagenRuta !== producto.imagenRuta) {
+      await eliminarImagenSilencioso(anterior.imagenRuta);
+    }
+
     res.json(producto);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -50,6 +59,7 @@ router.delete('/:id', proteger, async (req, res) => {
   try {
     const producto = await Producto.findByIdAndDelete(req.params.id);
     if (!producto) return res.status(404).json({ message: 'No encontrado' });
+    await eliminarImagenSilencioso(producto.imagenRuta);
     res.json({ message: 'Eliminado' });
   } catch (error) {
     res.status(500).json({ message: error.message });
